@@ -6,9 +6,25 @@ function MovieList({ onMovieClick }) {
   const [movies, setMovies] = useState([]);
 
   useEffect(() => {
-    axios.get(`${process.env.REACT_APP_MOVIE_API_URL}/movies`).then((response) => {
-      setMovies(response.data.movies);
-    });
+    const baseUrl =
+      process.env.REACT_APP_MOVIE_API_URL ||
+      'http://a80c2a52d3d364057b2c621315f7f2aa-1765943297.us-east-1.elb.amazonaws.com';
+    axios
+      .get(`${baseUrl}/movies`)
+      .then((response) => {
+        const movieList = response.data;
+        if (movieList && Array.isArray(movieList.movies)) {
+          setMovies(movieList.movies);
+        } else if (Array.isArray(movieList)) {
+          setMovies(movieList);
+        } else {
+          setMovies([]);
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching movies:', error);
+        setMovies([]);
+      });
   }, []);
 
   return (
