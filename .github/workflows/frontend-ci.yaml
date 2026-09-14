@@ -1,0 +1,86 @@
+name: Frontend Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'starter/frontend/**'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Linting Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: starter/frontend/package-lock.json
+      
+      - name: Installing depedencies
+        run: npm ci
+        working-directory: starter/frontend
+      
+      - name: Running Linter
+        run: npm run lint
+        working-directory: starter/frontend
+  
+  test:
+    name: Running Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: starter/frontend/package-lock.json
+        
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: starter/frontend
+      
+      - name: Running Tests
+        run: CI=true npm test
+        working-directory: starter/frontend
+  
+  build:
+    name: Build Docker Image
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: starter/frontend/package-lock.json
+      
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: starter/frontend
+      
+      - name: Run Test Suite
+        run: CI=true npm test
+        working-directory: starter/frontend
+      
+      - name: Build Docker Image
+        env:
+          REACT_APP_MOVIE_API_URL: http://localhost:5000
+        run: |
+          docker build \
+            --build-arg=REACT_APP_MOVIE_API_URL=$REACT_APP_MOVIE_API_URL \
+            --tag mp-frontend:latest .
+        working-directory: starter/frontend
